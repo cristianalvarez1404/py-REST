@@ -6,6 +6,9 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from products.serializers import ProductSerializer
+from api.filters import ProductFilter,InStockFilterBackend
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 @api_view(['POST'])
 def api_home(request,*args,**kwargs):
@@ -17,6 +20,27 @@ def api_home(request,*args,**kwargs):
     # instance = serializer.save()
     return Response(serializer.data)
   return Response({"invalid":"not good data"},status=400)
+
+class ProductListCreateAPIView(generics.ListCreateAPIView):
+  queryset= Product.objects.all()
+  serializer_class = ProductSerializer
+  #filterset_fields = ('name','price')
+  filterset_class = ProductFilter
+  filter_backends = [
+    DjangoFilterBackend, 
+    filters.SearchFilter,
+    filters.OrderingFilter,
+    InStockFilterBackend
+  ]
+  search_fields = ['name','description']
+  ordering_fields = ['name','price','stock']
+
+  def get_permissions(self):
+    self.permission_classes = [AllowAny],
+    if self.request.method == 'POST':
+      self.permission_classes = [IsAdminUser]
+    return super().get_permissions()
+
 
 # @api_view(["GET"])
 # def api_home(request,*args,**kwargs):

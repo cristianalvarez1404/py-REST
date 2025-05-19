@@ -39,7 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api',
-    'products'
+    'products',
+    'silk',
+    'drf_spectacular',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -124,3 +127,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+  'DEFAULT_SCHEMA_CLASS':'drf_spectacular.openapi.AutoSchema',
+  'DEFAULT_FILTER_BACKENDS':['django.filters.rest_framework.DjangoFilterBackend']
+}
+
+SPECTACULAR_SETTINGS = {
+  'TITLE':'E-Commerce API',
+  'DESCRIPTION':'A simple Product & Order API that helps us learn Django',
+  'VERSION':'1.0.0',
+  'SERVE_INCLUDE_SCHEMA':False,
+}
