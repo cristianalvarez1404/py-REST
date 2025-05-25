@@ -9,6 +9,7 @@ from products.serializers import ProductSerializer
 from api.filters import ProductFilter,InStockFilterBackend
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination,LimitOffsetPagination
 
 @api_view(['POST'])
 def api_home(request,*args,**kwargs):
@@ -22,7 +23,7 @@ def api_home(request,*args,**kwargs):
   return Response({"invalid":"not good data"},status=400)
 
 class ProductListCreateAPIView(generics.ListCreateAPIView):
-  queryset= Product.objects.all()
+  queryset= Product.objects.order_by('pk')
   serializer_class = ProductSerializer
   #filterset_fields = ('name','price')
   filterset_class = ProductFilter
@@ -34,12 +35,41 @@ class ProductListCreateAPIView(generics.ListCreateAPIView):
   ]
   search_fields = ['name','description']
   ordering_fields = ['name','price','stock']
+  # pagination_class = PageNumberPagination
+  pagination_class = LimitOffsetPagination
+  # pagination_class.page_size = 2
+  # pagination_class.page_query_param = 'pagenum'
+  # pagination_class.page_size_query_param = 'size'
+  # pagination_class.max_page_size = 6
 
   def get_permissions(self):
     self.permission_classes = [AllowAny],
     if self.request.method == 'POST':
       self.permission_classes = [IsAdminUser]
     return super().get_permissions()
+
+class OrderViewSet(viewsets.ModelViewSet):
+  queryset = Order.objects.prefetch_related('items__product')
+  serializer_class = OrderSerializer
+  permission_classes = [IsAuthenticated]
+  pagination_class = None
+  filterset_class = OrderFilter
+  filter_backends = [DjangoFilterBackend]
+  
+  def get_serializer_class(self):
+    if self.action == 'create':
+      return OrderCreateSerializer
+    return super().get_serializer_class()
+  
+  def get_queryset(self):
+    qs = super().get_queryset()
+    if not self.request.user.is_staff:
+      qs = qs.filter(user=self.request.user)
+    return qs  
+
+  @action(detail=False,methods=['get'],url_path='user-orders')
+  def user_orders(self, request):
+    orders = self.get_queryset().filter(user=request.user)
 
 
 # @api_view(["GET"])
